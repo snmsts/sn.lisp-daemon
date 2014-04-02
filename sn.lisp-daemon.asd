@@ -7,7 +7,7 @@
   (load-system :trivial-features))
 
 (defsystem sn.lisp-daemon
-  :version "0.1"
+  :version "0.2"
   :author "SANO Masatoshi"
   :license "MIT"
   :depends-on (:usocket 
@@ -18,17 +18,20 @@
                :do-urlencode
                :trivial-dump-core
                :trivial-utf-8
-               #-windows :iolib.syscalls)
+               #-windows :iolib.syscalls
+               :ironclad)
   :components ((:module "src"
                 :components
                 ((:file "httpd")
                  (:file "web" :depends-on ("httpd"))
                  (:file "template")
                  (:file "procs-model")
-                 (:file "procs-ctrl" :depends-on ("httpd" "procs-model" "template"))
+                 (:file "procs-ctrl" :depends-on ("web" "procs-model" "template"))
                  (:file "swank-model" :depends-on ("procs-model"))
-                 (:file "swank-ctrl" :depends-on ("httpd" "swank-model" "template"))
+                 (:file "swank-ctrl" :depends-on ("web" "swank-model" "template"))
                  (:file "swank-proxy" :depends-on ("httpd"))
+                 (:file "websocket" :depends-on ("web"))
+                 (:file "websocket-proxy" :depends-on ("websocket"))
                  (:file "dump")
                  (:file "core"))))
   :description "Common Lisp as a service.")
