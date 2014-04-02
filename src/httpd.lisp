@@ -1,9 +1,8 @@
 (defpackage sn.lisp-daemon.httpd
   (:use :cl)
-  (:export :start :publish :ok :badrequest :end :stream-usocket-with-state :accessor :*accept-class*
-           :*routined-duties* :*uri-assoc* :*host* :*sockets* :dispatch :stream-usocket-with-state :end
-           :paramlet :integer! )) ;; web.lisp
-
+  (:export  :start :publish :stream-usocket-with-state :accessor :*accept-class*
+   :*routined-duties* :*uri-assoc* :*host* :*sockets* :dispatch :stream-usocket-with-state :buffer :end
+   :paramlet :integer! :response :ok :badrequest)) ;; web.lisp
 (in-package :sn.lisp-daemon.httpd)
 
 (defvar *sockets* '())
@@ -31,7 +30,10 @@
     (push i *sockets*)))
 
 (defmethod dispatch ((socket stream-usocket-with-state))
-  (let ((line (coerce (loop :with in := (usocket:socket-stream socket) :for c := (read-byte in) :while (/= c #.(char-code #\Newline)) :collect (code-char c)) 'string)))
+  (let ((line (coerce (loop :with in := (usocket:socket-stream socket) 
+                            :for c := (read-byte in)
+                            :while (/= c #.(char-code #\Newline)) 
+                            :collect (code-char c)) 'string)))
     (push line (buffer socket))
     (when (equal line #.(string #\Return))
       (setf (buffer socket) (nreverse (buffer socket)))
@@ -67,20 +69,6 @@
 (defun end (socket)
   (usocket:socket-close socket)
   (setq *sockets* (remove socket *sockets*)))
-
-(defmacro response (function code expression)
-  (let ((socket (gensym)) (content-type (gensym)) (body (gensym)))
-    `(defun ,function (,socket ,content-type ,body)
-       (write-sequence (babel:string-to-octets 
-                        (format nil #.(format nil "~{~A~}" '("~{~A~^" #\Return "~%~}"))
-                                (list ,(format nil "HTTP/1.1 ~A ~A" code expression)
-                                      (format nil "Content-Type: ~A" ,content-type)
-                                      "Cache-Control: private, max-age=0"
-                                      "" ,body)):encoding :utf-8) (usocket:socket-stream ,socket))
-       (end ,socket))))
-
-(response badrequest 400 "Bad Request")
-(response ok 200 "OK")
 
 (defun process-header (socket)
   "I want make it simple enough,so just dispatch by URI"
