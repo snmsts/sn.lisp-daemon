@@ -11,9 +11,8 @@
  (defws get/websocket/swank 
    :onmessage (lambda (socket opcode ar)
                 (when (= opcode 1)
-                  (send-body (connecting socket)
-                             (babel:string-size-in-octets ar :encoding :utf-8)
-                             ar)))
+                  (let ((msg (yason:parse ar)))
+                    (ignore-errors (apply (gethash (first msg) *j2s*) socket (rest msg))))))
    :onconnect (lambda (socket uri params)
                 (declare (ignore uri params))
                 (change-class socket 'stream-usocket-websocket-swank-incomming)
@@ -37,13 +36,23 @@
 (defmacro defj2s (name params &body body)
   `(progn
      (setf (gethash ,(string-upcase name) *j2s*)
-           (lambda ,params 
+           (alexandria.0.dev:named-lambda
+               ,(make-symbol (concatenate 
+                              'string (string name) 
+                              (string '#:.json->sexp)))
+             ,params 
              ,@body))
      ',name))
 
 (defmacro defs2j (key params &body body)
   `(progn
      (setf (gethash ,key *s2j*)
-           (lambda ,params 
-             ,@body))
-     ',name))
+           ,params 
+           ,@body)
+     ',key))
+
+
+(defj2s raw (socket msg)
+  (send-body (connecting socket)
+             (babel:string-size-in-octets msg :encoding :utf-8)
+             msg))
