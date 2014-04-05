@@ -32,6 +32,7 @@
                  (:file "swank-proxy" :depends-on ("httpd"))
                  (:file "websocket" :depends-on ("web"))
                  (:file "websocket-proxy" :depends-on ("websocket"))
+                 (:file "websocket-proxy-ctrl" :depends-on ("websocket-proxy"))
                  (:file "dump")
                  (:file "core"))))
   :description "Common Lisp as a service.")
