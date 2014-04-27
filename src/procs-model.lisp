@@ -19,7 +19,7 @@
   (declare (ignorable name))
   (unless (find name *process-list* :key 'second :test 'equal)
     (let ((pid (progn 
-                 #-windows(iolib.syscalls:fork))))
+                 #-windows(osicat-posix:fork))))
       (if (zerop pid)
           (unwind-protect
                (progn
@@ -40,7 +40,7 @@
     (swank::setup-server
      0 (lambda (port)
          (drakma:http-request (format nil "http://~A:~A/api/1.0/swank/info?port=~A&pid=~A"
-                                      (first *host*) (rest *host*) port (iolib.syscalls:getpid)) :method :post))
+                                      (first *host*) (rest *host*) port (osicat-posix:getpid)) :method :post))
      style t nil)
     (loop :while t :do (sleep 1))))
 
@@ -55,7 +55,7 @@
   (let ((pid (find name *process-list* :key 'second :test 'equal)))
     (when pid
       (prog1 (progn 
-               #-windows(iolib.syscalls:kill (first pid) iolib.syscalls:sigkill))
+               #-windows(osicat-posix:kill (first pid) osicat-posix:sigkill))
         (takecare-processes)))))
 
 (defun quit-all ()
@@ -71,7 +71,7 @@
         (loop :for elt :in *process-list*
            :for (pid . rest) := elt
            :for r := (unless (progn
-                               #-windows(zerop (iolib.syscalls:waitpid pid iolib.syscalls:wnohang)))
+                               #-windows(zerop (osicat-posix:waitpid pid osicat-posix::wnohang)))
                        (log- 101 pid))
            :unless r
            :collect elt))

@@ -40,18 +40,6 @@
 #+nil
 (babel:octets-to-string (drakma:http-request "http://localhost:4005/api/1.0/process/quit" :method :post) :encoding :utf-8)
 
-(publish
- (defun get/process/index.html (uri socket)
-   (declare (ignore uri))
-   (ok socket "text/html; charset=UTF-8"
-       #.(sn.lisp-daemon.template:raw "procs.raw.html"))))
-
-(publish
- (defun get/process/index.js (uri socket)
-   (declare (ignore uri))
-   (ok socket "application/javascript; charset=UTF-8"
-       #.(sn.lisp-daemon.template:raw "procs.raw.js"))))
-
 ;; TODO move somewhere else
 (defvar *debug* nil)
 

@@ -64,7 +64,7 @@
             ((#x8) (send-frame socket #x8 ar)
              (ignore-errors (funcall (onclose socket) socket)) (end socket))
             ((#x9) (send-frame socket #xA ar)))
-          (when sn.lisp-daemon.procs-ctrl::*debug* (format t ":opcode ~S :msg ~S ~%" opcode ar))))
+          (when sn.lisp-daemon.procs-ctrl::*debug* (format t ":opcode ~S :msg ~S ~%" opcode (yason:parse ar)))))
     (end-of-file ()
       (ignore-errors (funcall (onclose socket) socket))
       (end socket))))

@@ -40,3 +40,29 @@
             :for y := (first (first x))
             :when (cl-ppcre:scan "index.html" y)
             :do (format out "<a href='~A'>~A</a><br>" y y))))))
+
+(defmacro publish-templates (prefix &optional (directory *template-path*))
+  (alexandria.0.dev:with-gensyms (uri socket)
+    (let ((files (let ((len (length (pathname-directory directory)))
+                       result)
+                   (cl-fad:walk-directory
+                    *template-path*
+                    #'(lambda (x)
+                        (let ((file (format nil "~{~A~^/~}"
+                                            (append (subseq (pathname-directory x) len)
+                                                    (list (file-namestring x))))))
+                          (push `(publish
+                                  (defun ,(make-symbol (format nil "get/~A~A" prefix file))
+                                      (,uri ,socket)
+                                    (declare (ignore ,uri))
+                                    (ok ,socket ,(if (equal (subseq (reverse file) 0 2) "sj")
+                                                     "application/x-javascript; charset=utf-8"
+                                                     "text/html")
+                                        ,(raw file))))
+                                  result)))
+                    :test (complement #'cl-fad:directory-pathname-p))
+                   result)))
+      `(progn ,@files))))
+
+(eval-when (:load-toplevel :execute)
+  (publish-templates "") )

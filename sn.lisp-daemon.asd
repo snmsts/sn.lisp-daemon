@@ -18,8 +18,9 @@
                :do-urlencode
                :trivial-dump-core
                :trivial-utf-8
-               #-windows :iolib.syscalls
-               :ironclad)
+               #-windows :osicat
+               :ironclad
+               :cl-fad)
   :components ((:module "src"
                 :components
                 ((:file "httpd")
@@ -33,6 +34,7 @@
                  (:file "websocket" :depends-on ("web"))
                  (:file "websocket-proxy" :depends-on ("websocket"))
                  (:file "websocket-proxy-ctrl" :depends-on ("websocket-proxy"))
+		 (:file "swank-json")
                  (:file "dump")
                  (:file "core"))))
   :description "Common Lisp as a service.")
