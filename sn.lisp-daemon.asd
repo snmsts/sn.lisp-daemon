@@ -7,7 +7,7 @@
   (load-system :trivial-features))
 
 (defsystem sn.lisp-daemon
-  :version "0.2"
+  :version "0.2.1"
   :author "SANO Masatoshi"
   :license "MIT"
   :depends-on (:usocket 
@@ -34,6 +34,7 @@
                  (:file "websocket" :depends-on ("web"))
                  (:file "websocket-proxy" :depends-on ("websocket"))
                  (:file "websocket-proxy-ctrl" :depends-on ("websocket-proxy"))
+		 (:file "websocket-proxy-sexp2js" :depends-on ("websocket-proxy"))
 		 (:file "swank-json")
                  (:file "dump")
                  (:file "core"))))

@@ -8,7 +8,6 @@
   ((mode :accessor mode)))
 
 (defparameter *j2s* (make-hash-table :test 'equalp))
-(defparameter *s2j* (make-hash-table))
 
 (publish
  (defws get/websocket/swank
@@ -29,12 +28,19 @@
    :class stream-usocket-websocket-swank-incomming))
 
 (defvar *tmp* 1)
+(defparameter *json-converter-functions* '())
+(export (defmacro defs2j (name params list &body body)
+	  `(progn
+	     (setq *json-converter-functions* (remove ',name *json-converter-functions* :key #'first))
+	     (push `(,',name ,',list ,(lambda ,params ,@body)) *json-converter-functions*)
+	     ',name)))
+
 (defmethod send-body ((socket stream-usocket-websocket-swank-incomming) length body)
   (let ((pos (position #\Space body)))
     (when sn.lisp-daemon.procs-ctrl::*debug*
       (format t "~S/~S~%" #+nil(type-of socket)
-                          (mode socket)
-                          body #+nil(subseq body 1 pos))
+	      (mode socket)
+	      body #+nil(subseq body 1 pos))
       (force-output))
     (send-frame socket 1
                 (with-output-to-string (o)
@@ -43,28 +49,10 @@
                      (yason:encode (list "raw" body) o))
                     ((equal (mode socket) :json)
                      (let ((cmd (subseq body 1 pos)))
-                       (cond
-                         ((equal cmd ":return")
-                          (let ((match (nth-value
-                                        1
-                                        (cl-ppcre:scan-to-strings
-                                         "\\(:\([^ ]*\)[^(]*\\(:\([^ ]*) (.*)\\) ([0-9]*)\\)$" body))))
-			    (yason:encode (list "return"
-                                                (list (aref match 1)
-                                                      (aref match 2))
-                                                (parse-integer(aref match 3)))
-                                          o)))
-                         ((find ":ping" '(":ping" ":write-string" ":presentation-end" ":presentation-start") :test 'equal)
-			  (let* (*read-eval*
-				 (*readtable* (copy-readtable))
-				 (read (progn
-					 (setf (readtable-case *readtable*) :preserve)
-					 (mapcar (lambda (x) (if (symbolp x) (format nil "~S" x) x)) (read-from-string body)))))
-			    (when sn.lisp-daemon.procs-ctrl::*debug* (format t "~S/~S~%" cmd (setq *tmp* read)))
-			    (multiple-value-list
-			     (ignore-errors (yason:encode
-					     (list (subseq cmd 1) (rest read)) o)))))
-                         (t (yason:encode (list "raw" body) o))))))))))
+                       (loop :with done :for (symbol cmds handler) :in *json-converter-functions*
+			  :when (find cmd cmds :test 'equal)
+			  :do (unless done (funcall handler cmd body o) (setq done t))
+			  :finally (unless done (yason:encode (list "raw" body) o))))))))))
 
 (defmacro defj2s (name params &body body)
   `(progn
@@ -76,13 +64,6 @@
              ,params 
              ,@body))
      ',name))
-
-(defmacro defs2j (key params &body body)
-  `(progn
-     (setf (gethash ,key *s2j*)
-           ,params 
-           ,@body)
-     ',key))
 
 (defj2s raw (socket msg)
   (send-body (connecting socket)
