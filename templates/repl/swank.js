@@ -13,6 +13,9 @@ function swank() {
 	    var hash = this.presentation[data[1][1]] || {};
 	    delete(hash[data[1][0]]);
 	    this.presentation[data[1][1]]= hash;
+	},"new-package":function (data) {
+	    connection.info[":PACKAGE"][":PROMPT"]=data[1][1];
+	    connection.info[":PACKAGE"][":NAME"]=data[1][0];
 	},"ping":function (data) {
 	    this.raw.call(this,"(:emacs-pong "+data[1][0]+" "+data[1][1]+")");
 	}

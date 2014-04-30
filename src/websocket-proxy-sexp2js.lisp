@@ -18,7 +18,7 @@
 (defvar *tmp* nil)
 
 (defs2j :read (cmd body o)
-    (":ping" ":write-string" ":presentation-end" ":presentation-start")
+    (":ping" ":write-string" ":presentation-end" ":presentation-start" ":new-package")
   (let* (*read-eval*
 	 (*readtable* (copy-readtable))
 	 (read (progn
